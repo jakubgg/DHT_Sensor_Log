@@ -23,8 +23,38 @@ parser.add_argument('-f', '--flush', default='5', type=int, help='How often flus
 parser.add_argument('-fo', '--flush-off', action='store_true', help='If switch present, Flushing will be turned off and Python defaults will be used.')
 parser.add_argument('-p', '--print', action='store_true', help='If switch present, or if the Output Filename is empty, the script will output values to the console.')
 parser.add_argument('-s', '--screen', action='store_true', help='Output to an OLED/E-Ink screen. Off by default.')
+parser.add_argument('-t', '--test-requirements', action='store_true', help='Run test to check if all dependencies are present')
 
 args = parser.parse_args()
+
+
+def test_requirements ():
+    ''' Try importing modules from the list of dependencies to check if any are missing. Output results to the console and exit. '''
+    
+    import importlib
+
+    modules = { 
+        'os': 'System module', 
+        'time' : 'System module. Provides various time-related functions.', 
+        'argparse': 'How are you even read this info?', 
+        'Adafruit_DHT' : 'DHT sensor library - sensor will not be accesible. See https://luma-oled.readthedocs.io/en/latest/install.html for more info.', 
+        'luma.core' : 'Necessary for OLED screen output. See https://luma-oled.readthedocs.io/en/latest/install.html for more info.', 
+        'luma.oled' : 'Necessary for OLED screen output. See https://luma-oled.readthedocs.io/en/latest/install.html for more info.', 
+        'PIL': 'Necessary for OLED screen output. See https://luma-oled.readthedocs.io/en/latest/install.html for more info.' 
+        }
+
+    for mod_name in modules:
+        try:
+            importlib.import_module(mod_name)
+        except ImportError:
+            print ('\033[91m[-]\033[0m ' + mod_name + '\033[91m not available \033[0m' + ' - ' + modules[mod_name])
+        else:
+            print ('\033[92m[+]\033[0m ' + mod_name + '\033[92m available \033[0m')
+    exit()
+
+
+if args.test_requirements == True:
+    test_requirements()
 
 # Setup temp sensor
 DHT_SENSOR = Adafruit_DHT.DHT22

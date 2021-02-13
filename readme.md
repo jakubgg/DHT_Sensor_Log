@@ -80,7 +80,6 @@ The script will run until you hit the `ctrl-c` or the RPi gives up a ghost.
 
 # Todo
 
-- add check for prerequisites and output nice info messages
 - conversion to F degrees
 - split script to only load relevant libraries when requested by cli options
 - make it work with default ugly fonts 
@@ -90,6 +89,9 @@ The script will run until you hit the `ctrl-c` or the RPi gives up a ghost.
 - add section on running the file in the background for long running sessions.
 - add reading DHT-11 sensor
 - upgrade to the Circuit Python library
+
+## Done
++ add check for prerequisites and output nice info messages
 
 # License
 [MIT](https://choosealicense.com/licenses/mit/)
