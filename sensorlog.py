@@ -70,7 +70,7 @@ def test_requirements():
     exit()
 
 
-if args.test_requirements == True:
+if args.test_requirements is True:
     test_requirements()
 
 # Setup temp sensor
@@ -83,20 +83,20 @@ line_counter = 1
 interval = args.interval
 flush_off = args.flush_off
 
-CSV_PATH = '' if args.output_file == False else args.output_file
+CSV_PATH = '' if args.output_file is False else args.output_file
 
 SERIAL = i2c(port=1, address=0x3C)
 oled_device = ssd1306(SERIAL, rotate=2)
 oled_device.contrast(5)
 
 # check what output should be initialised
-cli_output = False if args.output_file != False and args.print == False else True
-csv_output = False if args.output_file == False else args.output_file
-oled_output = False if args.screen == False else True
+cli_output = False if args.output_file is not False and args.print is False else True
+csv_output = False if args.output_file is False else args.output_file
+oled_output = False if args.screen is False else True
 
 # Setup CSV output
 
-if csv_output != False:
+if csv_output is not False:
     try:
         csv_file = open(CSV_PATH, 'a+')
         if os.stat(CSV_PATH).st_size == 0:
@@ -111,12 +111,12 @@ while True:
     if humidity is not None and temperature is not None:
 
         # CSV output
-        if csv_output != False:
+        if csv_output is not False:
             csv_file.write('{0},{1},{2:0.1f},{3:0.1f}\r\n'.format(time.strftime('%Y-%m-%d'), time.strftime('%H:%M:%S'),
                                                                   temperature, humidity))
 
             # skip manual flushing to disk if user overrides defaults
-            if flush_off == False:
+            if flush_off is False:
                 if line_counter >= flush_counter:
                     csv_file.flush()
                     line_counter = 0
@@ -124,12 +124,12 @@ while True:
                 line_counter += 1
 
         # CLI output
-        if cli_output == True:
+        if cli_output is True:
             print(time.strftime('%Y-%m-%d %H:%M:%S') + '  ' + 'Temp={0:0.1f}*C  Humidity={1:0.1f}%'.format(temperature,
                                                                                                            humidity))
 
         # OLED output
-        if oled_output == True:
+        if oled_output is True:
             with canvas(oled_device) as draw:
                 fnt = ImageFont.truetype("/home/pi/.fonts/UbuntuMono-R.ttf", 16)
                 draw.text((3, 5), time.strftime('%a %d   %H:%M'), font=fnt, fill="white")
