@@ -35,6 +35,8 @@ parser.add_argument('-p', '--print', action='store_true',
 parser.add_argument('-s', '--screen', action='store_true', help='Output to an OLED/E-Ink screen. Off by default.')
 parser.add_argument('-t', '--test-requirements', action='store_true',
                     help='Run test to check if all dependencies are present')
+parser.add_argument('-x', '--exit-on-error', action='store_true',
+                    help='Exit script on sensor read error. By default the script will log error and continue.')
 
 args = parser.parse_args()
 
@@ -70,6 +72,13 @@ def test_requirements():
     exit()
 
 
+def format_sensor_data(value):
+    if value is None:
+        return 'Err'
+    else:
+        return '{0:0.1f}'.format(value)
+
+
 if args.test_requirements is True:
     test_requirements()
 
@@ -82,6 +91,7 @@ flush_counter = args.flush
 line_counter = 1
 interval = args.interval
 flush_off = args.flush_off
+exit_on_error = False if args.exit_on_error is False else True
 
 CSV_PATH = '' if args.output_file is False else args.output_file
 
@@ -108,36 +118,34 @@ if csv_output is not False:
 while True:
     humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
 
-    if humidity is not None and temperature is not None:
+    # CSV output
+    if csv_output is not False:
+        csv_file.write('{0},{1},{2},{3}\r\n'.format(time.strftime('%Y-%m-%d'),
+                                                    time.strftime('%H:%M:%S'),
+                                                    format_sensor_data(temperature),
+                                                    format_sensor_data(humidity)
+                                                    ))
 
-        # CSV output
-        if csv_output is not False:
-            csv_file.write('{0},{1},{2:0.1f},{3:0.1f}\r\n'.format(time.strftime('%Y-%m-%d'), time.strftime('%H:%M:%S'),
-                                                                  temperature, humidity))
+        # skip manual flushing to disk if user overrides defaults
+        if flush_off is False:
+            if line_counter >= flush_counter:
+                csv_file.flush()
+                line_counter = 0
 
-            # skip manual flushing to disk if user overrides defaults
-            if flush_off is False:
-                if line_counter >= flush_counter:
-                    csv_file.flush()
-                    line_counter = 0
+            line_counter += 1
 
-                line_counter += 1
+    # CLI output
+    if cli_output is True:
+        print(time.strftime('%Y-%m-%d %H:%M:%S') + '  ' + 'Temp={0}*C  Humidity={1}%'.format(
+                                                    format_sensor_data(temperature),
+                                                    format_sensor_data(humidity)))
 
-        # CLI output
-        if cli_output is True:
-            print(time.strftime('%Y-%m-%d %H:%M:%S') + '  ' + 'Temp={0:0.1f}*C  Humidity={1:0.1f}%'.format(temperature,
-                                                                                                           humidity))
-
-        # OLED output
-        if oled_output is True:
-            with canvas(oled_device) as draw:
-                fnt = ImageFont.truetype("/home/pi/.fonts/UbuntuMono-R.ttf", 16)
-                draw.text((3, 5), time.strftime('%a %d   %H:%M'), font=fnt, fill="white")
-                draw.text((3, 25), 'Temp:    {0:0.1f}˚C'.format(temperature), font=fnt, fill="white")
-                draw.text((3, 40), 'Humidity:{0:0.1f}%'.format(humidity), font=fnt, fill="white")
-
-    else:
-        print("Failed to retrieve data from humidity sensor")
-        exit()
+    # OLED output
+    if oled_output is True:
+        with canvas(oled_device) as draw:
+            fnt = ImageFont.truetype("/home/pi/.fonts/UbuntuMono-R.ttf", 16)
+            draw.text((3, 5), time.strftime('%a %d   %H:%M'), font=fnt, fill="white")
+            draw.text((3, 25), 'Temp:    {0}˚C'.format(format_sensor_data(temperature)), font=fnt, fill="white")
+            draw.text((3, 40), 'Humidity:{0}%'.format(format_sensor_data(humidity)), font=fnt, fill="white")
 
     time.sleep(interval)
