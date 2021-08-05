@@ -37,6 +37,8 @@ parser.add_argument('-t', '--test-requirements', action='store_true',
                     help='Run test to check if all dependencies are present')
 parser.add_argument('-x', '--exit-on-error', action='store_true',
                     help='Exit script on sensor read error. By default the script will log error and continue.')
+parser.add_argument('-fh', '--fahrenheit_scale', default=False,
+                    help='When provided, outputs all temperature readings in Fahrenheit scale.')
 
 args = parser.parse_args()
 
@@ -72,13 +74,6 @@ def test_requirements():
     exit()
 
 
-def format_sensor_data(value):
-    if value is None:
-        return 'Err'
-    else:
-        return '{0:0.1f}'.format(value)
-
-
 if args.test_requirements is True:
     test_requirements()
 
@@ -92,6 +87,7 @@ line_counter = 1
 interval = args.interval
 flush_off = args.flush_off
 exit_on_error = False if args.exit_on_error is False else True
+default_scale = "C" if args.farhenheit_scale is False else "F"
 
 CSV_PATH = '' if args.output_file is False else args.output_file
 
@@ -103,6 +99,18 @@ oled_device.contrast(5)
 cli_output = False if args.output_file is not False and args.print is False else True
 csv_output = False if args.output_file is False else args.output_file
 oled_output = False if args.screen is False else True
+
+# [°F] = [°C] × 9⁄5 + 32
+def format_sensor_data(value, scale=default_scale):
+        
+    if value is None:
+        return 'Err'
+    else:
+        if scale == "F":
+            value = (value * (9/5)) + 32
+
+        return '{0:0.1f}'.format(value)
+
 
 # Setup CSV output
 
@@ -136,16 +144,17 @@ while True:
 
     # CLI output
     if cli_output is True:
-        print(time.strftime('%Y-%m-%d %H:%M:%S') + '  ' + 'Temp={0}*C  Humidity={1}%'.format(
+        print(time.strftime('%Y-%m-%d %H:%M:%S') + '  ' + 'Temp={0}*{2}  Humidity={1}%'.format(
                                                     format_sensor_data(temperature),
-                                                    format_sensor_data(humidity)))
+                                                    format_sensor_data(humidity)),
+                                                    default_scale)
 
     # OLED output
     if oled_output is True:
         with canvas(oled_device) as draw:
             fnt = ImageFont.truetype("/home/pi/.fonts/UbuntuMono-R.ttf", 16)
             draw.text((3, 5), time.strftime('%a %d   %H:%M'), font=fnt, fill="white")
-            draw.text((3, 25), 'Temp:    {0}˚C'.format(format_sensor_data(temperature)), font=fnt, fill="white")
+            draw.text((3, 25), 'Temp:    {0}˚{1}'.format(format_sensor_data(temperature)), default_scale, font=fnt, fill="white")
             draw.text((3, 40), 'Humidity:{0}%'.format(format_sensor_data(humidity)), font=fnt, fill="white")
 
     time.sleep(interval)
